@@ -376,7 +376,8 @@ threading.Thread(target=run_flask, daemon=True).start()
 
 # === 🔁 СТРАХОВКА: бот будит себя каждые 4 минуты ===
 def keep_awake():
-    url = "https://math-bot-telegram-two.onrender.com"  # ✅ Правильный URL
+    print("✅ keep_awake: функция запущена")
+    url = "https://math-bot-telegram-two.onrender.com"
     print(f"🔁 Будильник запущен: {url}")
     while True:
         try:
@@ -384,12 +385,13 @@ def keep_awake():
             print(f"✅ Пробуждение: {response.status_code} — {url}")
         except Exception as e:
             print(f"❌ Ошибка подключения: {e}")
-        time.sleep(240)  # каждые 4 минуты
+        time.sleep(240)
 
 # Запускаем в фоне
 threading.Thread(target=keep_awake, daemon=True).start()
 
 # === Запуск бота ===
+print("✅ Перед запуском бота")
 def run_bot():
     try:
         from telegram.ext import Application
