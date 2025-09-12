@@ -9,15 +9,13 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from flask import Flask
 import threading
 import os
-import subprocess
-import sys
 import requests
 import asyncio
 
 # === Загружаем токен из Secrets ===
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
-    print("? ОШИБКА: BOT_TOKEN не найден в Secrets. Проверь настройки!")
+    print("❌ ОШИБКА: BOT_TOKEN не найден в Secrets. Проверь настройки!")
     exit()
 
 DATA_FILE = "users.json"
@@ -62,14 +60,14 @@ def save_data(data):
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
     except Exception as e:
-        print(f"? Ошибка сохранения: {e}")
+        print(f"❌ Ошибка сохранения: {e}")
 
 def parse_question(q):
-    if ' ? ' in q:
-        a, b = q.split(' ? ')
+    if ' × ' in q:
+        a, b = q.split(' × ')
         return int(a), '*', int(b)
-    elif ' ? ' in q:
-        a, b = q.split(' ? ')
+    elif ' ÷ ' in q:
+        a, b = q.split(' ÷ ')
         return int(a), '/', int(b)
 
 def is_simple_question(a, op, b):
@@ -128,9 +126,9 @@ def generate_unique_pairs():
     questions = []
     for item in selected:
         if item[2] == '*':
-            questions.append((f"{item[0]} ? {item[1]}", item[0] * item[1]))
+            questions.append((f"{item[0]} × {item[1]}", item[0] * item[1]))
         elif item[2] == '/':
-            questions.append((f"{item[0]} ? {item[1]}", item[0] // item[1]))
+            questions.append((f"{item[0]} ÷ {item[1]}", item[0] // item[1]))
     return questions
 
 # === Обработчики ===
@@ -154,7 +152,7 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE, idx)
         context.user_data['comments_used'] += 1
 
     if idx in context.user_data.get('skipped', []):
-        text += "?? *Пропущенный вопрос*\n\n"
+        text += "🔁 *Пропущенный вопрос*\n\n"
 
     text += f"Вопрос {idx + 1}: {question}"
 
@@ -180,8 +178,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [["Да", "Нет"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text(
-        f"Привет, {user_name}! ??\n\n"
-        "Я создан, чтобы сделать из тебя умныша по умножению! ???\n\n"
+        f"Привет, {user_name}! 👋\n\n"
+        "Я создан, чтобы сделать из тебя умныша по умножению! 🧠✨\n\n"
         "Задам тебе 20 примеров. Готов?",
         reply_markup=reply_markup
     )
@@ -190,14 +188,14 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     if text == "Да":
         phrases = [
-            "Ого, какая тяга к знаниям! ??",
-            "Ничего себе, давай попробуем! ??",
-            "Ну давай! Поехали!!! ??"
+            "Ого, какая тяга к знаниям! 🚀",
+            "Ничего себе, давай попробуем! 💪",
+            "Ну давай! Поехали!!! ⏱️"
         ]
         await update.message.reply_text(random.choice(phrases), reply_markup=ReplyKeyboardRemove())
         await start_test(update, context)
     elif text == "Нет":
-        await update.message.reply_text("А я всё равно задам! Время пошло! ??", reply_markup=ReplyKeyboardRemove())
+        await update.message.reply_text("А я всё равно задам! Время пошло! ⏱️", reply_markup=ReplyKeyboardRemove())
         await start_test(update, context)
 
 async def start_test(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -281,12 +279,12 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         m, s = divmod(seconds, 60)
         return f"{m}:{s:02d}" if m > 0 else f"{s} сек"
 
-    result = f"? {correct}/20 за {format_time(total_time)}\n\n"
-    result += "?? Отлично! Нет ошибок!" if not context.user_data['errors'] else "? Ошибки:\n"
+    result = f"✅ {correct}/20 за {format_time(total_time)}\n\n"
+    result += "🎉 Отлично! Нет ошибок!" if not context.user_data['errors'] else "❌ Ошибки:\n"
     for q in context.user_data['errors']:
         a, op, b = parse_question(q)
         correct_answer = a * b if op == '*' else a // b
-        result += f"  {q} > Правильно: {correct_answer}\n"
+        result += f"  {q} → Правильно: {correct_answer}\n"
 
     keyboard = [["Еще разок"], ["Общая статистика"], ["Статистика за день"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -314,18 +312,18 @@ async def cmd_stat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     recent_errors = [err for a in valid_attempts for err in a["errors"]
                      if datetime.strptime(a["date"], "%Y-%m-%d %H:%M") >= one_week_ago]
     error_count = Counter(recent_errors).most_common(3)
-    error_text = "\n".join([f"{err} > {cnt} раз" for err, cnt in error_count]) if error_count else "нет данных"
+    error_text = "\n".join([f"{err} → {cnt} раз" for err, cnt in error_count]) if error_count else "нет данных"
 
     def format_time(seconds):
         m, s = divmod(seconds, 60)
         return f"{m}:{s:02d}" if m > 0 else f"{s}"
 
     await update.message.reply_text(
-        f"?? Общая статистика:\n"
-        f"?? Лучшее: {format_time(best['time'])} ({best['date']})\n"
-        f"?? Худшее: {format_time(worst['time'])} ({worst['date']})\n"
-        f"?? Среднее: {format_time(avg)}\n\n"
-        f"?? Частые ошибки (последние 7 дней):\n{error_text}"
+        f"📊 Общая статистика:\n"
+        f"🏆 Лучшее: {format_time(best['time'])} ({best['date']})\n"
+        f"🥈 Худшее: {format_time(worst['time'])} ({worst['date']})\n"
+        f"🕐 Среднее: {format_time(avg)}\n\n"
+        f"🔥 Частые ошибки (последние 7 дней):\n{error_text}"
     )
 
 async def cmd_day(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -346,7 +344,7 @@ async def cmd_day(update: Update, context: ContextTypes.DEFAULT_TYPE):
         m, s = divmod(seconds, 60)
         return f"{m}:{s:02d}" if m > 0 else f"{s}"
 
-    text_msg = f"?? Статистика за сегодня ({today}):\n\n"
+    text_msg = f"📅 Статистика за сегодня ({today}):\n\n"
     text_msg += f"Пройдено тестов: {len(todays_attempts)}\n\n"
     for i, a in enumerate(todays_attempts, 1):
         errors = ", ".join(a["errors"]) if a["errors"] else "нет"
@@ -368,7 +366,7 @@ app_flask = Flask('')
 
 @app_flask.route('/')
 def home():
-    return "?? Бот работает! Готов к умножению!"
+    return "🤖 Бот работает! Готов к умножению!"
 
 def run_flask():
     app_flask.run(host='0.0.0.0', port=8080)
@@ -376,90 +374,21 @@ def run_flask():
 # Запускаем веб-сервер в фоне
 threading.Thread(target=run_flask, daemon=True).start()
 
-# === ?? СТРАХОВКА: бот будит себя каждые 4 минуты ===
-import threading
-import time
-import requests
-
+# === 🔁 СТРАХОВКА: бот будит себя каждые 4 минуты ===
 def keep_awake():
-    url = "https://second.sheav1.repl.co"  # ?? Жёстко заданная ссылка
-    print(f"?? Будильник запущен: {url}")
+    url = "https://second.sheav1.repl.co"
+    print(f"🔁 Будильник запущен: {url}")
     while True:
         try:
             response = requests.get(url, timeout=10)
-            print(f"? Пробуждение: {response.status_code} — {url}")
+            print(f"✅ Пробуждение: {response.status_code} — {url}")
         except Exception as e:
-            print(f"? Ошибка подключения: {e}")
+            print(f"❌ Ошибка подключения: {e}")
         time.sleep(240)  # каждые 4 минуты
 
 # Запускаем в фоне
 threading.Thread(target=keep_awake, daemon=True).start()
-# === Запуск бота ===
-def run_bot():
-    try:
-        application = Application.builder().token(TOKEN).build()
 
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("stat", cmd_stat))
-        application.add_handler(CommandHandler("day", cmd_day))
-        application.add_handler(MessageHandler(filters.Regex("^(Да|Нет)$"), handle_response))
-        application.add_handler(MessageHandler(
-            filters.Regex("^(Еще разок|Общая статистика|Статистика за день)$"),
-            handle_after_test
-        ))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, answer))
-
-        # Создаём новый event loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.create_task(application.run_polling())
-        print("?? Бот запущен и получает обновления...")
-
-    except Exception as e:
-        print(f"? Ошибка при запуске бота: {e}")
-
-# === Запуск ===
-if __name__ == "__main__":
-    run_bot()
-    print("? Бот работает 24/7. Не закрывайте вкладку.")
-    try:
-        while True:
-            time.sleep(10)
-    except KeyboardInterrupt:
-        print("Бот остановлен")
-# === Запуск бота ===
-def run_bot():
-    try:
-        from telegram.ext import Application
-        application = Application.builder().token(TOKEN).build()
-
-        # Хендлеры
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("stat", cmd_stat))
-        application.add_handler(CommandHandler("day", cmd_day))
-        application.add_handler(MessageHandler(filters.Regex("^(Да|Нет)$"), handle_response))
-        application.add_handler(MessageHandler(
-            filters.Regex("^(Еще разок|Общая статистика|Статистика за день)$"),
-            handle_after_test
-        ))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, answer))
-
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.create_task(application.run_polling())
-        print("🔄 Бот запущен и получает обновления...")
-    except Exception as e:
-        print(f"❌ Ошибка при запуске бота: {e}")
-
-# === Запуск ===
-if __name__ == "__main__":
-    run_bot()
-    try:
-        while True:
-            time.sleep(10)
-    except KeyboardInterrupt:
-        print("Бот остановлен")
 # === Запуск бота ===
 def run_bot():
     try:
