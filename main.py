@@ -376,7 +376,7 @@ threading.Thread(target=run_flask, daemon=True).start()
 
 # === 🔁 СТРАХОВКА: бот будит себя каждые 4 минуты ===
 def keep_awake():
-    url = "https://second.sheav1.repl.co"
+    url = "https://math-bot-telegram-two.onrender.com"  # ✅ Правильный URL
     print(f"🔁 Будильник запущен: {url}")
     while True:
         try:
