@@ -392,12 +392,16 @@ def keep_awake():
 threading.Thread(target=keep_awake, daemon=True).start()
 
 # === Запуск бота ===
-print("✅ Перед запуском бота")
 def run_bot():
+    print("✅ 1. Запуск функции run_bot()")
     try:
+        print("✅ 2. Импортируем telegram.ext")
         from telegram.ext import Application
+        print(f"✅ 3. Токен: {TOKEN[:5]}...{TOKEN[-5:]}")
         application = Application.builder().token(TOKEN).build()
+        print("✅ 4. Application создан")
 
+        # Хендлеры
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("stat", cmd_stat))
         application.add_handler(CommandHandler("day", cmd_day))
@@ -407,6 +411,7 @@ def run_bot():
             handle_after_test
         ))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, answer))
+        print("✅ 5. Хендлеры добавлены")
 
         import asyncio
         loop = asyncio.new_event_loop()
@@ -415,7 +420,9 @@ def run_bot():
         print("🔄 Бот запущен и получает обновления...")
     except Exception as e:
         print(f"❌ Ошибка при запуске бота: {e}")
-
+        import traceback
+        traceback.print_exc()
+        
 # === Запуск ===
 if __name__ == "__main__":
     run_bot()
