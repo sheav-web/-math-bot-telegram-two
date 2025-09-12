@@ -427,3 +427,36 @@ if __name__ == "__main__":
             time.sleep(10)
     except KeyboardInterrupt:
         print("Бот остановлен")
+# === Запуск бота ===
+def run_bot():
+    try:
+        from telegram.ext import Application
+        application = Application.builder().token(TOKEN).build()
+
+        # Хендлеры
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("stat", cmd_stat))
+        application.add_handler(CommandHandler("day", cmd_day))
+        application.add_handler(MessageHandler(filters.Regex("^(Да|Нет)$"), handle_response))
+        application.add_handler(MessageHandler(
+            filters.Regex("^(Еще разок|Общая статистика|Статистика за день)$"),
+            handle_after_test
+        ))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, answer))
+
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.create_task(application.run_polling())
+        print("🔄 Бот запущен и получает обновления...")
+    except Exception as e:
+        print(f"❌ Ошибка при запуске бота: {e}")
+
+# === Запуск ===
+if __name__ == "__main__":
+    run_bot()
+    try:
+        while True:
+            time.sleep(10)
+    except KeyboardInterrupt:
+        print("Бот остановлен")
