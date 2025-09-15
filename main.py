@@ -398,6 +398,13 @@ def run_bot():
         print("✅ 2. Импортируем telegram.ext")
         from telegram.ext import Application
         print(f"✅ 3. Токен: {TOKEN[:5]}...{TOKEN[-5:]}")
+        
+        # Проверим, что токен валиден
+        if not TOKEN.startswith("84574"):
+            print("❌ Ошибка: токен начинается не с 84574")
+            return
+
+        print("🔧 Создаём Application...")
         application = Application.builder().token(TOKEN).build()
         print("✅ 4. Application создан")
 
