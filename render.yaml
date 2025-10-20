@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: math-bot-telegram-two
+    runtime: python
+    region: oregon
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+    startCommand: python main.py
